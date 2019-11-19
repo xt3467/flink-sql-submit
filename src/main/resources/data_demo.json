@@ -1,0 +1,19 @@
+{
+	"name": "小明"，"gender":"男",
+	"age": 15,
+	"grade": "2-1",
+	"courses": [
+		{
+			"course_name": "语文",
+			"exam_date": "2019-12-13",
+			"score": 80,
+			"rank": 10
+		},
+		{
+			"course_name": "数学",
+			"exam_date": "2019-12-13",
+			"score": 80,
+			"rank": 10
+		}
+	]
+}

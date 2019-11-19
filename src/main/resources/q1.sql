@@ -21,7 +21,7 @@ CREATE TABLE user_log (
 ) WITH (
     'connector.type' = 'kafka',
     'connector.version' = 'universal',
-    'connector.topic' = 'user_behavior',
+    'connector.topic' = 'test',
     'connector.startup-mode' = 'earliest-offset',
     'connector.properties.0.key' = 'zookeeper.connect',
     'connector.properties.0.value' = 'localhost:2181',

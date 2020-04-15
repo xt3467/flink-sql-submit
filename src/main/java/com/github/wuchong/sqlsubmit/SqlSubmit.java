@@ -1,36 +1,37 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements. See the NOTICE
+ * file distributed with this work for additional information regarding copyright ownership. The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the
+ * License. You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
  */
 
 package com.github.wuchong.sqlsubmit;
+
+import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.List;
+
+import org.apache.flink.table.api.EnvironmentSettings;
+import org.apache.flink.table.api.SqlParserException;
+import org.apache.flink.table.api.TableEnvironment;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.github.wuchong.sqlsubmit.cli.CliOptions;
 import com.github.wuchong.sqlsubmit.cli.CliOptionsParser;
 import com.github.wuchong.sqlsubmit.cli.SqlCommandParser;
 import com.github.wuchong.sqlsubmit.cli.SqlCommandParser.SqlCommandCall;
-import org.apache.flink.table.api.EnvironmentSettings;
-import org.apache.flink.table.api.SqlParserException;
-import org.apache.flink.table.api.TableEnvironment;
-
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.List;
 
 public class SqlSubmit {
+
+    private static Logger logger = LoggerFactory.getLogger(SqlSubmit.class);
 
     public static void main(String[] args) throws Exception {
         final CliOptions options = CliOptionsParser.parseClient(args);
@@ -50,14 +51,14 @@ public class SqlSubmit {
     }
 
     private void run() throws Exception {
-        EnvironmentSettings settings = EnvironmentSettings.newInstance()
-                .useBlinkPlanner()
-                .inStreamingMode()
-                .build();
+        EnvironmentSettings settings = EnvironmentSettings.newInstance().useBlinkPlanner().inStreamingMode().build();
         this.tEnv = TableEnvironment.create(settings);
-        List<String> sql = Files.readAllLines(Paths.get(workSpace + "/" + sqlFilePath));
+        String sqlPath = workSpace + File.separator + sqlFilePath;
+        logger.info("sql path->{}", sqlPath);
+        List<String> sql = Files.readAllLines(Paths.get(sqlPath));
         List<SqlCommandCall> calls = SqlCommandParser.parse(sql);
         for (SqlCommandCall call : calls) {
+            logger.info("sql command->\n{}", call);
             callCommand(call);
         }
         tEnv.execute("SQL Job");
@@ -72,6 +73,9 @@ public class SqlSubmit {
                 break;
             case CREATE_TABLE:
                 callCreateTable(cmdCall);
+                break;
+            case CREATE_VIEW:
+                callCreateView(cmdCall);
                 break;
             case INSERT_INTO:
                 callInsertInto(cmdCall);
@@ -88,6 +92,15 @@ public class SqlSubmit {
     }
 
     private void callCreateTable(SqlCommandCall cmdCall) {
+        String ddl = cmdCall.operands[0];
+        try {
+            tEnv.sqlUpdate(ddl);
+        } catch (SqlParserException e) {
+            throw new RuntimeException("SQL parse failed:\n" + ddl + "\n", e);
+        }
+    }
+
+    private void callCreateView(SqlCommandCall cmdCall) {
         String ddl = cmdCall.operands[0];
         try {
             tEnv.sqlUpdate(ddl);
